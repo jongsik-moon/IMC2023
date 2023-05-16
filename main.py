@@ -1,7 +1,7 @@
 from kaglib.PairGenerator import *
 from kaglib.matchers.LoFTR import *
 from kaglib.matchers.KeyNetAffNetHardNet import *
-from kaglib.utils import read_csv_data_path, print_data_dict, create_submission
+from kaglib.utils import read_csv_data_path, create_submission, plot_image_grid, get_current_time, create_directory
 from kaglib.PycolmapHandler import *
 import logging
 import gc
@@ -33,13 +33,22 @@ for dataset, _ in data_dict.items():
         t = time()
         index_pairs = get_image_pairs_shortlist(
             img_fnames,
-            sim_th=0.5,  # should be strict
+            sim_th=0.9,  # should be strict
             min_pairs=
             20,  # we select at least min_pairs PER IMAGE with biggest similarity
             exhaustive_if_less=20,
             device=device)
+        '''    
+        curtime = get_current_time()
+        save_dir = os.path.join('/home/jsmoon/kaggle/visualize', curtime)
+        create_directory(save_dir)
+        for i, pair in enumerate(index_pairs):
+            save_path = os.path.join(save_dir, str(i) + '.jpg')
+            image_paths = [img_fnames[pair[0]], img_fnames[pair[1]]]
+            print(image_paths)
+            plot_image_grid(image_paths=image_paths, save_path=save_path)
+        '''
         t = time() - t
-        print(index_pairs)
         print(f'{len(index_pairs)}, pairs to match, {t:.4f} sec')
 
         t = time()
