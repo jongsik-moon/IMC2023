@@ -25,6 +25,23 @@ from timm.data.transforms_factory import create_transform
 import pycolmap
 
 import datetime
+import matplotlib.pyplot as plt
+import numpy as np
+
+
+def plot_image_grid(images, grid_shape=(2, 1), figsize=(8, 8), save_path=None):
+    fig, axes = plt.subplots(*grid_shape, figsize=figsize)
+    flattened_axes = axes.ravel()
+
+    for i, image in enumerate(images):
+        flattened_axes[i].imshow(image)
+        flattened_axes[i].axis('off')
+
+    plt.tight_layout()
+
+    if save_path is not None:
+        plt.savefig(save_path, format='jpeg', dpi=300)
+        plt.close()
 
 
 def arr_to_str(a):
