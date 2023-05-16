@@ -29,9 +29,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
 
+def create_directory(directory_path):
+    try:
+        os.makedirs(directory_path)
+        print(f"Directory '{directory_path}' created successfully.")
+    except FileExistsError:
+        print(f"Directory '{directory_path}' already exists.")
 
 def plot_image_grid(image_paths,
-                    grid_shape=(2, 2),
+                    grid_shape=(2, 1),
                     figsize=(8, 8),
                     save_path=None):
     fig, axes = plt.subplots(*grid_shape, figsize=figsize)
