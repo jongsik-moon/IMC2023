@@ -29,12 +29,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
 
+
 def create_directory(directory_path):
     try:
         os.makedirs(directory_path)
         print(f"Directory '{directory_path}' created successfully.")
     except FileExistsError:
         print(f"Directory '{directory_path}' already exists.")
+
 
 def plot_image_grid(image_paths,
                     grid_shape=(2, 1),
@@ -44,6 +46,7 @@ def plot_image_grid(image_paths,
     flattened_axes = axes.ravel()
 
     for i, image_path in enumerate(image_paths):
+        print(image_path)
         image = Image.open(image_path)
         flattened_axes[i].imshow(image)
         flattened_axes[i].axis('off')
