@@ -24,6 +24,8 @@ from timm.data.transforms_factory import create_transform
 # 3D reconstruction
 import pycolmap
 
+import datetime
+
 
 def arr_to_str(a):
     return ';'.join([str(x) for x in a.reshape(-1)])
@@ -105,3 +107,9 @@ def get_unique_idxs(A, dim=0):
                                       device=cum_sum.device), cum_sum[:-1]))
     first_indices = ind_sorted[cum_sum]
     return first_indices
+
+
+def get_current_time():
+    current_time = datetime.datetime.now()
+    formatted_time = current_time.strftime("%y%d%m_%H%M%S")
+    return formatted_time
