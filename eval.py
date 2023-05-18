@@ -204,7 +204,7 @@ translation_thresholds_meters_dict = {
 
 src = '/home/jsmoon/kaggle/input/image-matching-challenge-2023'
 
-with open(f'{src}/train/train_labels_urban.csv',
+with open(f'{src}/train/train_labels.csv',
           'r') as fr, open('ground_truth.csv', 'w') as fw:
     for i, l in enumerate(fr):
         if i == 0:
