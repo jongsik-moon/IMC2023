@@ -14,7 +14,7 @@ src = '/home/jsmoon/kaggle/input/image-matching-challenge-2023/train'
 device = torch.device('cuda')
 cwd = op.dirname(__file__)
 csv_path = op.join(
-    cwd, 'input/image-matching-challenge-2023/train/train_labels_urban.csv')
+    cwd, 'input/image-matching-challenge-2023/train/train_labels.csv')
 
 data_dict = read_csv_data_path(csv_path)
 out_results = defaultdict(dict)
