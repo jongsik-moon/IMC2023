@@ -64,8 +64,8 @@ for dataset, _ in data_dict.items():
                                     sfm_pairs,
                                     features,
                                     matches,
-                                    image_list=references)
-
+                                    image_list=references,
+                                    mapper_options=options)
         if model:
             for k, im in model.images.items():
                 key1 = f'{dataset}/{scene}/images/{im.name}'
