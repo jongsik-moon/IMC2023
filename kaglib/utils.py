@@ -76,17 +76,21 @@ def create_submission(out_results, data_dict):
         f.write(
             'image_path,dataset,scene,rotation_matrix,translation_vector\n')
         for dataset in data_dict:
+            if dataset in out_results:
+                res = out_results[dataset]
+            else:
+                res = {}
             for scene in data_dict[dataset]:
+                if scene in res:
+                    scene_res = res[scene]
+                else:
+                    scene_res = {"R": {}, "t": {}}
                 for image in data_dict[dataset][scene]:
-                    print(image)
-                    if image in out_results[dataset][scene]:
-                        print("IN")
-                        R = out_results[dataset][scene][image]['R'].reshape(-1)
-                        T = out_results[dataset][scene][image]['t'].reshape(-1)
-                        print("R: ", R)
-                        print("T: ", T)
+                    if image in scene_res:
+                        print(image)
+                        R = scene_res[image]['R'].reshape(-1)
+                        T = scene_res[image]['t'].reshape(-1)
                     else:
-                        print("OUT")
                         R = np.eye(3).reshape(-1)
                         T = np.zeros((3))
                     f.write(
