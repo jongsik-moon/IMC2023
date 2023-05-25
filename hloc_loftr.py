@@ -13,6 +13,7 @@ from kaglib.utils import create_submission
 from collections import defaultdict
 from kaglib.utils import read_csv_data_path, create_submission
 import pycolmap
+from hloc.utils.io import list_h5_names
 
 src = '/home/jsmoon/kaggle/input/image-matching-challenge-2023/train'
 device = torch.device('cuda')
@@ -52,6 +53,8 @@ for dataset, _ in data_dict.items():
 
         global_descriptors = extract_features.main(retrieval_conf, images,
                                                    outputs)
+        if not list_h5_names(global_descriptors):
+            continue
         pairs_from_retrieval.main(global_descriptors,
                                   sfm_pairs,
                                   num_loc,
