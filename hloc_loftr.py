@@ -8,6 +8,7 @@ from pathlib import Path
 from hloc import extract_features, match_features, reconstruction, visualization, pairs_from_exhaustive, match_dense, pairs_from_retrieval, pairs_from_covisibility, triangulation
 from hloc.visualization import plot_images, read_image
 from hloc.utils import viz_3d
+from hloc.utils.parsers import parse_retrieval
 from kaglib.utils import create_submission
 from collections import defaultdict
 from kaglib.utils import read_csv_data_path, create_submission
@@ -52,13 +53,15 @@ for dataset, _ in data_dict.items():
         global_descriptors = extract_features.main(retrieval_conf, images,
                                                    outputs)
         pairs_from_retrieval.main(global_descriptors,
-                                  loc_pairs,
+                                  sfm_pairs,
                                   num_loc,
                                   db_prefix=references,
                                   db_list=references)
-
+        if len(parse_retrieval(sfm_pairs)) < 100:
+            print("too small num from netvlad")
+            pairs_from_exhaustive.main(sfm_pairs, image_list=references)
         features, sfm_matches = match_dense.main(matcher_conf,
-                                                 loc_pairs,
+                                                 sfm_pairs,
                                                  images,
                                                  outputs,
                                                  max_kps=8192,
@@ -67,7 +70,7 @@ for dataset, _ in data_dict.items():
         options = {'min_model_size': 3}
         model = reconstruction.main(sfm_dir,
                                     images,
-                                    loc_pairs,
+                                    sfm_pairs,
                                     features,
                                     sfm_matches,
                                     image_list=references,
