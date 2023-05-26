@@ -27,13 +27,13 @@ for dataset, _ in data_dict.items():
         img_dir = f'{src}/{dataset}/{scene}/images'
         if not os.path.exists(img_dir):
             continue
-        if scene != 'cyprus':
-            continue
+        # if scene != 'cyprus':
+        #     continue
         # Wrap the meaty part in a try-except block.
         out_results[dataset][scene] = {}
 
         images = Path(f'{src}/{dataset}/{scene}/images')
-        outputs = Path(f'/home/jsmoon/kaggle/featureout/{dataset}_{scene}')
+        outputs = Path(f'/home/jsmoon/kaggle/spsg/{dataset}_{scene}')
         if not os.path.isdir(outputs):
             os.makedirs(outputs, exist_ok=True)
         sfm_pairs = outputs / 'pairs-sfm.txt'

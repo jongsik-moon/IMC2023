@@ -36,7 +36,7 @@ for dataset, _ in data_dict.items():
         out_results[dataset][scene] = {}
 
         images = Path(f'{src}/{dataset}/{scene}/images')
-        outputs = Path(f'/home/jsmoon/kaggle/loftr/{dataset}_{scene}')
+        outputs = Path(f'/home/jsmoon/kaggle/mix/{dataset}_{scene}')
         if not os.path.isdir(outputs):
             os.makedirs(outputs, exist_ok=True)
         sfm_pairs = outputs / 'pairs-sfm.txt'
@@ -45,36 +45,30 @@ for dataset, _ in data_dict.items():
         features = outputs / 'features.h5'
         matches = outputs / 'matches.h5'
 
-        matcher_conf = match_dense.confs['loftr']
-        retrieval_conf = extract_features.confs['netvlad']
-
         references = [str(p.relative_to(images)) for p in images.iterdir()]
         print(len(references), "mapping images")
 
-        global_descriptors = extract_features.main(retrieval_conf, images,
-                                                   outputs)
-        if not list_h5_names(global_descriptors):
-            continue
-        pairs_from_retrieval.main(global_descriptors,
-                                  sfm_pairs,
-                                  num_loc,
-                                  db_prefix=references,
-                                  db_list=references)
-        if len(parse_retrieval(sfm_pairs)) < 100:
-            print("too small num from netvlad")
-            pairs_from_exhaustive.main(sfm_pairs, image_list=references)
+        feature_conf = extract_features.confs['superpoint_aachen']
+        matcher_conf = match_dense.confs['loftr_superpoint']
+
+        features_sp = extract_features.main(feature_conf,
+                                            images,
+                                            image_list=references,
+                                            feature_path=features)
+
+        pairs_from_exhaustive.main(sfm_pairs, image_list=references)
         features, sfm_matches = match_dense.main(matcher_conf,
                                                  sfm_pairs,
                                                  images,
-                                                 outputs,
-                                                 max_kps=8192,
-                                                 overwrite=False)
+                                                 export_dir=outputs,
+                                                 features_ref=features_sp)
+
         print(sfm_matches)
         options = {'min_model_size': 3}
         model = reconstruction.main(sfm_dir,
                                     images,
                                     sfm_pairs,
-                                    features,
+                                    features_sp,
                                     sfm_matches,
                                     image_list=references,
                                     mapper_options=options)
