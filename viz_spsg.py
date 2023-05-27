@@ -8,11 +8,11 @@ from hloc import extract_features, match_features, visualization, pairs_from_exh
 from hloc.visualization import plot_images, read_image
 
 src = '/home/jsmoon/kaggle/input/image-matching-challenge-2023/train'
-dataset = 'heritage'
-scene = 'cyprus'
-sfm = f'/home/jsmoon/kaggle/featureout/{dataset}_{scene}'
+dataset = 'haiper'
+scene = 'chairs'
+sfm = f'/home/jsmoon/kaggle/spsg/{dataset}_{scene}'
 images = Path(f'{src}/{dataset}/{scene}/images')
-outputs = Path(f'/home/jsmoon/kaggle/query/{dataset}_{scene}')
+outputs = Path(f'/home/jsmoon/kaggle/spsg/{dataset}_{scene}')
 sfm_pairs = outputs / 'pairs-sfm.txt'
 loc_pairs = outputs / 'pairs-loc.txt'
 sfm_dir = outputs / 'sfm'
@@ -34,13 +34,13 @@ extract_features.main(feature_conf,
                       images,
                       image_list=[query],
                       feature_path=features,
-                      overwrite=True)
+                      overwrite=False)
 pairs_from_exhaustive.main(loc_pairs, image_list=[query], ref_list=references)
 match_features.main(matcher_conf,
                     loc_pairs,
                     features=features,
                     matches=matches,
-                    overwrite=True)
+                    overwrite=False)
 
 camera = pycolmap.infer_camera_from_image(images / query)
 conf = {
