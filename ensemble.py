@@ -9,7 +9,6 @@ def get_keypoints(hfile, name):
     return dset.__array__()
 
 def get_matches(hfile, name0: str, name1: str) -> tuple[np.ndarray]:
-    # pair, reverse = find_pair(hfile, name0, name1)
     pair = names_to_pair(name0, name1)
     matches = hfile[pair]['matches0'].__array__()
     scores = hfile[pair]['matching_scores0'].__array__()
@@ -48,7 +47,6 @@ def merge_keypoints(files: list[str]):
             # Here we assume 'image_size' is a single array for each image, so we just take the last one.
             image_size = image_size_list[-1]
 
-            # Create the 'keypoints', 'descriptors', 'scores' and 'image_size' datasets in this group
             grp.create_dataset('keypoints', data=keypoints)
             grp.create_dataset('scores', data=scores)
             grp.create_dataset('image_size', data=image_size)
@@ -73,8 +71,6 @@ def merge_matches(matches_files: list[str], features_files: list[str], pairs_pat
                 with h5py.File(matches_filepath, 'r') as m_f, h5py.File(features_filepath, 'r') as f_f:
                     matches, scores = get_matches(m_f, pair[0], pair[1])
 
-                    # Since now get_matches returns raw match data with all indices, we need to apply a different logic.
-                    # Wherever there is a non-match (represented by -1), we keep it as is.
                     # For valid matches, we add the offset to update the indices.
                     matches[matches != -1] += offset
 
