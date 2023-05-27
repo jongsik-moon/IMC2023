@@ -4,12 +4,6 @@ from hloc.utils.io import get_matches, find_pair
 from hloc.utils.parsers import names_to_pair
 import numpy as np
 
-# # read h5 file
-# cwd = os.path.dirname(__file__)
-# features = ['./spsg/haiper_bike/features_0.h5', './spsg/haiper_bike/features_1.h5']
-# matches = ['./spsg/haiper_bike/matches_0.h5', './spsg/haiper_bike/matches_1.h5']
-# pairs_path = './spsg/haiper_bike/pairs-sfm.txt'
-
 def get_keypoints(hfile, name):
     dset = hfile[name]['keypoints']
     return dset.__array__()
@@ -58,35 +52,6 @@ def merge_keypoints(files: list[str]):
             grp.create_dataset('keypoints', data=keypoints)
             grp.create_dataset('scores', data=scores)
             grp.create_dataset('image_size', data=image_size)
-
-# def merge_keypoints(files: list[str]):
-#     # Open a new file for writing
-#     base = os.path.dirname(files[0])
-#     with h5py.File(f'{base}/merged_features.h5', 'w') as f_out:
-#         # Collect all keys from all files
-#         all_keys = set()
-#         for filepath in files:
-#             with h5py.File(filepath, 'r') as f:
-#                 all_keys.update(f.keys())
-
-#         for key in all_keys:
-#             # create a new group in the output file for this key
-#             grp = f_out.create_group(key)
-
-#             keypoints_list = []
-
-#             for filepath in files:
-#                 with h5py.File(filepath, 'r') as f:
-#                     if key in f:  # if key is in the current file
-#                         keypoints = get_keypoints(f, key)
-#                         keypoints_list.append(keypoints)
-
-#             # concatenate all keypoints from all files for this key
-#             keypoints = np.concatenate(keypoints_list, axis=0)
-
-#             # Create the 'keypoints' dataset in this group
-#             dset = grp.create_dataset('keypoints', data=keypoints)
-
 
 def merge_matches(matches_files: list[str], features_files: list[str], pairs_path):
     # Open a new file for writing
