@@ -8,62 +8,105 @@ from pathlib import Path
 from hloc import extract_features, match_features, reconstruction, visualization, pairs_from_exhaustive
 from hloc.visualization import plot_images, read_image
 from hloc.utils import viz_3d
+from hloc.utils.io import get_keypoints, get_matches
 from kaglib.utils import create_submission
 from collections import defaultdict
 from kaglib.utils import read_csv_data_path, create_submission
 import pycolmap
+from ensemble import merge_keypoints, merge_matches
 
-src = '/home/jsmoon/kaggle/input/image-matching-challenge-2023/train'
-device = torch.device('cuda')
+src = '/home/joon/kaggle/imc2023/dataset/train'
+device = torch.device('cuda:7')
 cwd = op.dirname(__file__)
-csv_path = op.join(
-    cwd, 'input/image-matching-challenge-2023/train/train_labels.csv')
+csv_path = '/home/joon/kaggle/imc2023/dataset/train/train_labels.csv'
+
+feature_conf = {
+            'output': 'feats-superpoint-n4096-r1024',
+            'model': {
+                'name': 'superpoint',
+                'nms_radius': 3,
+                'max_keypoints': -1,
+            },
+            'preprocessing': {
+                'grayscale': True,
+                'resize_max': 1600,
+            },
+        }
+matcher_conf = {
+    'output': 'matches-superglue',
+    'model': {
+        'name': 'superglue',
+        'weights': 'outdoor',
+        'sinkhorn_iterations': 100,
+    },
+}
+
+feature_confs = []
+ensemble_sizes = [1400, 1600]
+for ensemble_size in ensemble_sizes:
+    feature_conf = copy.deepcopy(feature_conf)
+    feature_conf['preprocessing']['resize_max'] = ensemble_size
+    feature_confs.append(feature_conf)
+
 
 data_dict = read_csv_data_path(csv_path)
 out_results = defaultdict(dict)
-print(data_dict)
+print(data_dict.keys())
+
+
 for dataset, _ in data_dict.items():
     for scene in data_dict[dataset]:
         img_dir = f'{src}/{dataset}/{scene}/images'
         if not os.path.exists(img_dir):
             continue
-        # if scene != 'cyprus':
-        #     continue
-        # Wrap the meaty part in a try-except block.
         out_results[dataset][scene] = {}
-
         images = Path(f'{src}/{dataset}/{scene}/images')
-        outputs = Path(f'/home/jsmoon/kaggle/spsg/{dataset}_{scene}')
+
+        features_list = []
+        matches_list = []
+
+        outputs = Path(f'{cwd}/spsg/{dataset}_{scene}')
         if not os.path.isdir(outputs):
             os.makedirs(outputs, exist_ok=True)
+
         sfm_pairs = outputs / 'pairs-sfm.txt'
-        loc_pairs = outputs / 'pairs-loc.txt'
         sfm_dir = outputs / 'sfm'
-        features = outputs / 'features.h5'
-        matches = outputs / 'matches.h5'
-
-        feature_conf = extract_features.confs['superpoint_aachen']
-        matcher_conf = match_features.confs['superglue']
-
         references = [str(p.relative_to(images)) for p in images.iterdir()]
-        print(len(references), "mapping images")
-
-        extract_features.main(feature_conf,
-                              images,
-                              image_list=references,
-                              feature_path=features)
         pairs_from_exhaustive.main(sfm_pairs, image_list=references)
-        match_features.main(matcher_conf,
+
+        for idx, feature_conf in enumerate(feature_confs):
+
+            features = outputs / f'features_{idx}.h5'
+            matches = outputs / f'matches_{idx}.h5'
+            features_list.append(features)
+            matches_list.append(matches)
+
+            print(len(references), "mapping images")
+
+            extract_features.main(feature_conf,
+                                images,
+                                image_list=references,
+                                feature_path=features)
+            match_features.main(matcher_conf,
                             sfm_pairs,
                             features=features,
                             matches=matches)
+
+            print(f'ensemble {idx}/{len(feature_confs)} done')
+
+        print('Merging features and matches...')
+        merge_keypoints(features_list)
+        merge_matches(matches_list, features_list, sfm_pairs)
+
+        merged_features = outputs / 'merged_features.h5'
+        merged_matches = outputs / 'merged_matches.h5'
 
         options = {'min_model_size': 3}
         model = reconstruction.main(sfm_dir,
                                     images,
                                     sfm_pairs,
-                                    features,
-                                    matches,
+                                    merged_features,
+                                    merged_matches,
                                     image_list=references,
                                     mapper_options=options)
         if model:
