@@ -55,11 +55,22 @@ kpt0 = matches[img1_key][img2_key]['keypoints0']
 kpt1 = matches[img1_key][img2_key]['keypoints1']
 matches0 = matches[img1_key][img2_key]['matches0']
 
-keypoints0_cv2 = [cv2.KeyPoint(point[0], point[1], 1) for point in kpt0]
-keypoints1_cv2 = [cv2.KeyPoint(point[0], point[1], 1) for point in kpt1]
+match_indices = np.where(matches0 != -1)[0]
 
-# Convert matches to cv2.DMatch objects
-matches_cv2 = [cv2.DMatch(i, i, 0) for i in matches0]
+# Filter keypoints and matches using match_indices
+kpt0_matched = kpt0[match_indices]
+kpt1_matched = kpt1[matches0[match_indices]]
+
+# Convert matched keypoints to cv2.KeyPoint objects
+keypoints0_cv2 = [
+    cv2.KeyPoint(point[0], point[1], 1) for point in kpt0_matched
+]
+keypoints1_cv2 = [
+    cv2.KeyPoint(point[0], point[1], 1) for point in kpt1_matched
+]
+
+# Create matches
+matches_cv2 = [cv2.DMatch(i, i, 0) for i in range(len(match_indices))]
 
 img_out = cv2.drawMatches(img1, keypoints0_cv2, img2, keypoints1_cv2,
                           matches_cv2, None)
