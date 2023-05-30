@@ -35,10 +35,8 @@ def load_h5_3layer(filename):
 
 
 PATH_TO_FEATS = '/home/jsmoon/kaggle/spsg/haiper_fountain'
-matches = load_h5_3layer(
-    os.path.join(PATH_TO_FEATS, 'matches.h5'))
-features = load_h5_2layer(
-    os.path.join(PATH_TO_FEATS, 'features.h5'))
+matches = load_h5_3layer(os.path.join(PATH_TO_FEATS, 'matches.h5'))
+features = load_h5_2layer(os.path.join(PATH_TO_FEATS, 'features.h5'))
 IMG_DIR = '/home/jsmoon/kaggle/input/image-matching-challenge-2023/train/haiper/fountain/images'
 img1_key = 'image_000.jpeg'
 img2_key = 'image_007.jpeg'
@@ -57,11 +55,23 @@ kpt0 = features[img1_key]['keypoints']
 kpt1 = features[img2_key]['keypoints']
 matches0 = matches[img1_key][img2_key]['matches0']
 
-keypoints0_cv2 = [cv2.KeyPoint(point[0], point[1], 1) for point in kpt0]
-keypoints1_cv2 = [cv2.KeyPoint(point[0], point[1], 1) for point in kpt1]
+match_indices = np.where(matches0 != -1)[0]
 
+# Filter keypoints and matches using match_indices
+kpt0_matched = kpt0[match_indices]
+kpt1_matched = kpt1[matches0[match_indices]]
+
+# Convert matched keypoints to cv2.KeyPoint objects
+keypoints0_cv2 = [
+    cv2.KeyPoint(point[0], point[1], 1) for point in kpt0_matched
+]
+keypoints1_cv2 = [
+    cv2.KeyPoint(point[0], point[1], 1) for point in kpt1_matched
+]
+
+# Create matches
+matches_cv2 = [cv2.DMatch(i, i, 0) for i in range(len(match_indices))]
 # Convert matches to cv2.DMatch objects
-matches_cv2 = [cv2.DMatch(i, i, 0) for i in matches0]
 
 img_out = cv2.drawMatches(img1, keypoints0_cv2, img2, keypoints1_cv2,
                           matches_cv2, None)
