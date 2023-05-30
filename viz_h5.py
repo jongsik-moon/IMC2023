@@ -51,10 +51,18 @@ import kornia.feature as KF
 import torch
 from kornia_moons.feature import *
 
-kpt0 = np.array(matches[img1_key][img2_key]['keypoints0'])
-kpt1 = np.array(matches[img1_key][img2_key]['keypoints1'])
-matches = np.array(matches[img1_key][img2_key]['matches0'])
-img_out = cv2.drawMatches(img1, kpt0, img2, kpt1, matches, None)
+kpt0 = matches[img1_key][img2_key]['keypoints0']
+kpt1 = matches[img1_key][img2_key]['keypoints1']
+matches0 = matches[img1_key][img2_key]['matches0']
+
+keypoints0_cv2 = [cv2.KeyPoint(point[0], point[1], 1) for point in kpt0]
+keypoints1_cv2 = [cv2.KeyPoint(point[0], point[1], 1) for point in kpt1]
+
+# Convert matches to cv2.DMatch objects
+matches_cv2 = [cv2.DMatch(i, i, 0) for i in matches0]
+
+img_out = cv2.drawMatches(img1, keypoints0_cv2, img2, keypoints1_cv2,
+                          matches_cv2, None)
 plt.figure()
 fig, ax = plt.subplots(figsize=(15, 15))
 ax.imshow(img_out, interpolation='nearest')
