@@ -34,9 +34,9 @@ def load_h5_3layer(filename):
     return dict_to_load
 
 
-PATH_TO_FEATS = '/home/jsmoon/kaggle/loftr/haiper_fountain'
+PATH_TO_FEATS = '/home/jsmoon/outputs/haiper-fountain'
 matches = load_h5_3layer(
-    os.path.join(PATH_TO_FEATS, 'matches-loftr_pairs-sfm.h5'))
+    os.path.join(PATH_TO_FEATS, 'matches-patch2pix_pairs-sfm.h5'))
 IMG_DIR = '/home/jsmoon/kaggle/input/image-matching-challenge-2023/train/haiper/fountain/images'
 img1_key = 'image_000.jpeg'
 img2_key = 'image_007.jpeg'
