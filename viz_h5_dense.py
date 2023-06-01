@@ -34,12 +34,12 @@ def load_h5_3layer(filename):
     return dict_to_load
 
 
-PATH_TO_FEATS = '/home/jsmoon/outputs/haiper-fountain'
+PATH_TO_FEATS = '/home/jsmoon/kaggle/loftr/haiper_bike'
 matches = load_h5_3layer(
-    os.path.join(PATH_TO_FEATS, 'matches-patch2pix_pairs-sfm.h5'))
-IMG_DIR = '/home/jsmoon/kaggle/input/image-matching-challenge-2023/train/haiper/fountain/images'
-img1_key = 'image_000.jpeg'
-img2_key = 'image_007.jpeg'
+    os.path.join(PATH_TO_FEATS, 'matches-loftr_pairs-sfm.h5'))
+IMG_DIR = '/home/jsmoon/kaggle/input/image-matching-challenge-2023/train/haiper/bike/images'
+img1_key = 'image_004.jpeg'
+img2_key = 'image_029.jpeg'
 img1 = cv2.cvtColor(cv2.imread(os.path.join(IMG_DIR, img1_key)),
                     cv2.COLOR_BGR2RGB)
 img2 = cv2.cvtColor(cv2.imread(os.path.join(IMG_DIR, img2_key)),
