@@ -7,6 +7,7 @@ import numpy as np
 from copy import deepcopy
 from collections import defaultdict
 
+
 def load_h5_1layer(filename):
     '''Loads dictionary from hdf5 file'''
 
@@ -16,6 +17,7 @@ def load_h5_1layer(filename):
         for key1 in keys:
             dict_to_load[key1] = f[key1][()]
     return dict_to_load
+
 
 def load_h5_2layer(filename):
     '''Loads dictionary from hdf5 file'''
@@ -43,12 +45,12 @@ def load_h5_3layer(filename):
     return dict_to_load
 
 
-PATH_TO_FEATS = '/home/jsmoon/kaggle/featureout/haiper_bike'
+PATH_TO_FEATS = '/home/jsmoon/kaggle/featureout/haiper_chairs'
 matches = load_h5_2layer(os.path.join(PATH_TO_FEATS, 'matches.h5'))
 features = load_h5_1layer(os.path.join(PATH_TO_FEATS, 'keypoints.h5'))
-IMG_DIR = '/home/jsmoon/kaggle/input/image-matching-challenge-2023/train/haiper/bike/images'
+IMG_DIR = '/home/jsmoon/kaggle/input/image-matching-challenge-2023/train/haiper/chairs/images'
 img1_key = 'image_004.jpeg'
-img2_key = 'image_150.jpeg'
+img2_key = 'image_155.jpeg'
 img1 = cv2.cvtColor(cv2.imread(os.path.join(IMG_DIR, img1_key)),
                     cv2.COLOR_BGR2RGB)
 img2 = cv2.cvtColor(cv2.imread(os.path.join(IMG_DIR, img2_key)),
