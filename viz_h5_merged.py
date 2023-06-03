@@ -34,30 +34,30 @@ def load_h5_3layer(filename):
     return dict_to_load
 
 
-PATH_TO_FEATS = '/home/jsmoon/outputs/haiper-fountain'
-matches = load_h5_3layer(
-    os.path.join(PATH_TO_FEATS, 'matches-patch2pix_pairs-sfm.h5'))
-IMG_DIR = '/home/jsmoon/kaggle/input/image-matching-challenge-2023/train/haiper/fountain/images'
-img1_key = 'image_000.jpeg'
-img2_key = 'image_033.jpeg'
+PATH_TO_FEATS = '/home/jsmoon/kaggle/spsg/urban_kyiv-puppet-theater'
+matches = load_h5_2layer(os.path.join(PATH_TO_FEATS, 'merged_matches.h5'))
+features = load_h5_2layer(os.path.join(PATH_TO_FEATS, 'merged_features.h5'))
+IMG_DIR = '/home/jsmoon/kaggle/input/image-matching-challenge-2023/train/urban/kyiv-puppet-theater/images'
+img1_key = 'IMG_20220127_165549.jpg'
+img2_key = 'IMG_20220127_165608.jpg'
 img1 = cv2.cvtColor(cv2.imread(os.path.join(IMG_DIR, img1_key)),
                     cv2.COLOR_BGR2RGB)
 img2 = cv2.cvtColor(cv2.imread(os.path.join(IMG_DIR, img2_key)),
                     cv2.COLOR_BGR2RGB)
 plt.imshow(np.concatenate([img1, img2], axis=1))
 
-# %%
 import kornia.feature as KF
 import torch
 from kornia_moons.feature import *
 
-kpt0 = matches[img1_key][img2_key]['keypoints0']
-kpt1 = matches[img1_key][img2_key]['keypoints1']
-matches0 = matches[img1_key][img2_key]['matches0']
-
+kpt0 = features[img1_key]['keypoints']
+kpt1 = features[img2_key]['keypoints']
+try:
+    matches0 = matches[f'{img1_key}_{img2_key}']['matches0']
+except:
+    print(f'key for {img1_key}_{img2_key}')
 match_indices = np.where(matches0 != -1)[0]
-print(match_indices)
-print(matches0)
+
 # Filter keypoints and matches using match_indices
 kpt0_matched = kpt0[match_indices]
 kpt1_matched = kpt1[matches0[match_indices]]
@@ -72,6 +72,7 @@ keypoints1_cv2 = [
 
 # Create matches
 matches_cv2 = [cv2.DMatch(i, i, 0) for i in range(len(match_indices))]
+# Convert matches to cv2.DMatch objects
 
 img_out = cv2.drawMatches(img1, keypoints0_cv2, img2, keypoints1_cv2,
                           matches_cv2, None)
