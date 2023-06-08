@@ -15,25 +15,26 @@ from kaglib.utils import read_csv_data_path, create_submission
 import pycolmap
 from ensemble import merge_keypoints, merge_matches
 
-src = '/home/joon/kaggle/imc2023/dataset/train'
-device = torch.device('cuda:7')
+src = '/home/jsmoon/kaggle/input/image-matching-challenge-2023/train'
+device = torch.device('cuda:0')
 cwd = op.dirname(__file__)
-csv_path = '/home/joon/kaggle/imc2023/dataset/train/train_labels.csv'
+csv_path = '/home/jsmoon/kaggle/input/image-matching-challenge-2023/train/train_labels.csv'
 
 feature_conf = {
-            'output': 'feats-superpoint-n4096-r1024',
-            'model': {
-                'name': 'superpoint',
-                'nms_radius': 3,
-                'max_keypoints': -1,
-            },
-            'preprocessing': {
-                'grayscale': True,
-                'resize_max': 1600,
-            },
-        }
+    'output': 'feats-superpoint-n4096-r1024',
+    'model': {
+        'name': 'superpoint',
+        'nms_radius': 3,
+        'max_keypoints': -1,
+    },
+    'preprocessing': {
+        'grayscale': True,
+        'resize_max': 1600,
+    },
+}
 matcher_conf = {
     'output': 'matches-superglue',
+    'num_workers': 0,
     'model': {
         'name': 'superglue',
         'weights': 'outdoor',
@@ -41,22 +42,47 @@ matcher_conf = {
     },
 }
 
+sift_conf = {
+    'output': 'feats-sift',
+    'model': {
+        'name': 'dog'
+    },
+    'preprocessing': {
+        'grayscale': True,
+        'resize_max': 2400,
+    }
+}
+adalam_conf = {
+    'output': 'matches-adalam',
+    'num_workers': 0,
+    'model': {
+        'name': 'adalam'
+    }
+}
+
+
 feature_confs = []
-ensemble_sizes = [1400, 1600]
+ensemble_sizes = [1600]
 for ensemble_size in ensemble_sizes:
     feature_conf = copy.deepcopy(feature_conf)
     feature_conf['preprocessing']['resize_max'] = ensemble_size
     feature_confs.append(feature_conf)
 
+sift_confs = []
+ensemble_sizes = [2800]
+for ensemble_size in ensemble_sizes:
+    sift_conf = copy.deepcopy(sift_conf)
+    sift_conf['preprocessing']['resize_max'] = ensemble_size
+    sift_confs.append(sift_conf)
 
 data_dict = read_csv_data_path(csv_path)
 out_results = defaultdict(dict)
 print(data_dict.keys())
 
-
 for dataset, _ in data_dict.items():
     for scene in data_dict[dataset]:
         img_dir = f'{src}/{dataset}/{scene}/images'
+        if scene != 'chairs': continue
         if not os.path.exists(img_dir):
             continue
         out_results[dataset][scene] = {}
@@ -84,15 +110,34 @@ for dataset, _ in data_dict.items():
             print(len(references), "mapping images")
 
             extract_features.main(feature_conf,
-                                images,
-                                image_list=references,
-                                feature_path=features)
+                                  images,
+                                  image_list=references,
+                                  feature_path=features)
             match_features.main(matcher_conf,
-                            sfm_pairs,
-                            features=features,
-                            matches=matches)
+                                sfm_pairs,
+                                features=features,
+                                matches=matches)
 
             print(f'ensemble {idx}/{len(feature_confs)} done')
+
+        for idx, sift_conf in enumerate(sift_confs):
+
+            features = outputs / f'features_{idx+len(feature_confs)}.h5'
+            matches = outputs / f'matches_{idx+len(feature_confs)}.h5'
+            features_list.append(features)
+            matches_list.append(matches)
+
+            print(len(references), "mapping images")
+
+            extract_features.main(sift_conf,
+                                  images,
+                                  image_list=references,
+                                  feature_path=features)
+            match_features.main(adalam_conf,
+                                sfm_pairs,
+                                features=features,
+                                matches=matches)
+                                
 
         print('Merging features and matches...')
         merge_keypoints(features_list)
