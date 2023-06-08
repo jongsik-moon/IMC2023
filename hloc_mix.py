@@ -80,7 +80,6 @@ print(data_dict.keys())
 for dataset, _ in data_dict.items():
     for scene in data_dict[dataset]:
         img_dir = f'{src}/{dataset}/{scene}/images'
-        if scene != 'cyprus': continue
         if not os.path.exists(img_dir):
             continue
         out_results[dataset][scene] = {}
@@ -96,6 +95,8 @@ for dataset, _ in data_dict.items():
         sfm_pairs = outputs / 'pairs-sfm.txt'
         sfm_dir = outputs / 'sfm'
         references = [str(p.relative_to(images)) for p in images.iterdir()]
+
+        pairs_from_exhaustive.main(sfm_pairs, image_list=references)
 
         for idx, feature_conf in enumerate(feature_confs):
 
