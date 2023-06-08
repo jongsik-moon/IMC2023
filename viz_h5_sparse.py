@@ -35,8 +35,8 @@ def load_h5_3layer(filename):
 
 
 PATH_TO_FEATS = '/home/jsmoon/kaggle/spsg/urban_kyiv-puppet-theater'
-matches = load_h5_3layer(os.path.join(PATH_TO_FEATS, 'matches_2.h5'))
-features = load_h5_2layer(os.path.join(PATH_TO_FEATS, 'features_2.h5'))
+matches = load_h5_3layer(os.path.join(PATH_TO_FEATS, 'merged_matches.h5'))
+features = load_h5_2layer(os.path.join(PATH_TO_FEATS, 'merged_features.h5'))
 IMG_DIR = '/home/jsmoon/kaggle/input/image-matching-challenge-2023/train/urban/kyiv-puppet-theater/images'
 img1_key = 'IMG_20220127_165549.jpg'
 img2_key = 'IMG_20220127_165608.jpg'

@@ -34,12 +34,12 @@ def load_h5_3layer(filename):
     return dict_to_load
 
 
-PATH_TO_FEATS = '/home/jsmoon/kaggle/spsg/urban_kyiv-puppet-theater'
+PATH_TO_FEATS = '/home/jsmoon/kaggle/sift/heritage_wall'
 matches = load_h5_2layer(os.path.join(PATH_TO_FEATS, 'merged_matches.h5'))
 features = load_h5_2layer(os.path.join(PATH_TO_FEATS, 'merged_features.h5'))
-IMG_DIR = '/home/jsmoon/kaggle/input/image-matching-challenge-2023/train/urban/kyiv-puppet-theater/images'
-img1_key = 'IMG_20220127_165549.jpg'
-img2_key = 'IMG_20220127_165608.jpg'
+IMG_DIR = '/home/jsmoon/kaggle/input/image-matching-challenge-2023/train/heritage/wall/images'
+img1_key = 'DSC_4928_acr.jpg'
+img2_key = 'DSC_4940_acr.jpg'
 img1 = cv2.cvtColor(cv2.imread(os.path.join(IMG_DIR, img1_key)),
                     cv2.COLOR_BGR2RGB)
 img2 = cv2.cvtColor(cv2.imread(os.path.join(IMG_DIR, img2_key)),
@@ -55,7 +55,7 @@ kpt1 = features[img2_key]['keypoints']
 try:
     matches0 = matches[f'{img1_key}_{img2_key}']['matches0']
 except:
-    print(f'key for {img1_key}_{img2_key}')
+    matches0 = matches[f'{img2_key}_{img1_key}']['matches0']
 match_indices = np.where(matches0 != -1)[0]
 
 # Filter keypoints and matches using match_indices
@@ -74,10 +74,15 @@ keypoints1_cv2 = [
 matches_cv2 = [cv2.DMatch(i, i, 0) for i in range(len(match_indices))]
 # Convert matches to cv2.DMatch objects
 
-img_out = cv2.drawMatches(img1, keypoints0_cv2, img2, keypoints1_cv2,
-                          matches_cv2, None)
+img_out = cv2.drawMatches(img1,
+                          keypoints0_cv2,
+                          img2,
+                          keypoints1_cv2,
+                          matches_cv2,
+                          None,
+                          flags=2)
 plt.figure()
 fig, ax = plt.subplots(figsize=(15, 15))
 ax.imshow(img_out, interpolation='nearest')
-
+cv2.imwrite('/home/jsmoon/result.png', img_out)
 # %%

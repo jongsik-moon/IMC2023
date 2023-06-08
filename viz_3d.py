@@ -2,7 +2,7 @@
 import pycolmap
 from hloc.utils import viz_3d
 
-src = '/home/jsmoon/kaggle/spsg/haiper_bike'
+src = '/home/jsmoon/kaggle/sift/heritage_cyprus'
 rec_gt = pycolmap.Reconstruction(f'{src}/sfm')
 
 fig = viz_3d.init_figure()
@@ -19,7 +19,7 @@ from hloc import visualization
 from pathlib import Path
 
 images = Path(
-    '/home/jsmoon/kaggle/input/image-matching-challenge-2023/train/haiper/bike/images'
+    '/home/jsmoon/kaggle/input/image-matching-challenge-2023/train/heritage/cyprus/images'
 )
 visualization.visualize_sfm_2d(rec_gt, images, color_by='visibility', n=25)
 # %%
