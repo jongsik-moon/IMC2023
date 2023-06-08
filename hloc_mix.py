@@ -5,71 +5,144 @@ import os.path as op
 import copy
 
 from pathlib import Path
-from hloc import extract_features, match_features, reconstruction, visualization, pairs_from_exhaustive, match_dense, pairs_from_retrieval, pairs_from_covisibility, triangulation
+from hloc import extract_features, match_features, reconstruction, visualization, pairs_from_exhaustive, pairs_from_retrieval
 from hloc.visualization import plot_images, read_image
 from hloc.utils import viz_3d
+from hloc.utils.io import get_keypoints, get_matches
 from hloc.utils.parsers import parse_retrieval
 from kaglib.utils import create_submission
 from collections import defaultdict
 from kaglib.utils import read_csv_data_path, create_submission
 import pycolmap
-from hloc.utils.io import list_h5_names
+from ensemble import merge_keypoints, merge_matches
+from kaglib.matchers.LoFTR import match_loftr
+from kaglib.PairGenerator import get_img_pairs_exhaustive
+
+
+def get_img_pairs_exhaustive(img_fnames):
+    index_pairs = []
+    for i in range(len(img_fnames)):
+        for j in range(i + 1, len(img_fnames)):
+            index_pairs.append((i, j))
+    return index_pairs
+
 
 src = '/home/jsmoon/kaggle/input/image-matching-challenge-2023/train'
-device = torch.device('cuda')
+device = torch.device('cuda:7')
 cwd = op.dirname(__file__)
-csv_path = op.join(
-    cwd, 'input/image-matching-challenge-2023/train/train_labels.csv')
-num_loc = 5
+csv_path = '/home/jsmoon/kaggle/input/image-matching-challenge-2023/train/train_labels.csv'
+
+feature_conf = {
+    'output': 'feats-superpoint-n4096-rmax1600',
+    'model': {
+        'name': 'superpoint',
+        'nms_radius': 3,
+        'max_keypoints': -1,
+    },
+    'preprocessing': {
+        'grayscale': True,
+        'resize_max': 1600,
+        'resize_force': True,
+    },
+}
+matcher_conf = {
+    'output': 'matches-superglue',
+    'num_workers': 0,
+    'model': {
+        'name': 'superglue',
+        'weights': 'outdoor',
+        'sinkhorn_iterations': 100
+        #         'match_threshold': 0.4,
+    },
+}
+retrieval_conf = {
+    'output': 'global-feats-openibl',
+    'model': {
+        'name': 'openibl',
+        'weights': '/kaggle/input/openibl-weight/vgg16_netvlad.pth'
+    },
+    'preprocessing': {
+        'resize_max': 1024
+    },
+}
+num_loc = 40
+feature_confs = []
+ensemble_sizes = [1400]
+for ensemble_size in ensemble_sizes:
+    feature_conf = copy.deepcopy(feature_conf)
+    feature_conf['preprocessing']['resize_max'] = ensemble_size
+    feature_confs.append(feature_conf)
 
 data_dict = read_csv_data_path(csv_path)
 out_results = defaultdict(dict)
-print(data_dict)
+print(data_dict.keys())
+
 for dataset, _ in data_dict.items():
     for scene in data_dict[dataset]:
         img_dir = f'{src}/{dataset}/{scene}/images'
+        if scene != 'cyprus': continue
         if not os.path.exists(img_dir):
             continue
-        # if scene != 'cyprus':
-        #     continue
-        # Wrap the meaty part in a try-except block.
         out_results[dataset][scene] = {}
-
         images = Path(f'{src}/{dataset}/{scene}/images')
-        outputs = Path(f'/home/jsmoon/kaggle/mix/{dataset}_{scene}')
+
+        features_list = []
+        matches_list = []
+
+        outputs = Path(f'{cwd}/spsg/{dataset}_{scene}')
         if not os.path.isdir(outputs):
             os.makedirs(outputs, exist_ok=True)
+
         sfm_pairs = outputs / 'pairs-sfm.txt'
-        loc_pairs = outputs / 'pairs-loc.txt'
         sfm_dir = outputs / 'sfm'
-        features = outputs / 'features.h5'
-        matches = outputs / 'matches.h5'
-
         references = [str(p.relative_to(images)) for p in images.iterdir()]
-        print(len(references), "mapping images")
 
-        feature_conf = extract_features.confs['superpoint_aachen']
-        matcher_conf = match_dense.confs['loftr_superpoint']
+        for idx, feature_conf in enumerate(feature_confs):
 
-        features_sp = extract_features.main(feature_conf,
-                                            images,
-                                            image_list=references,
-                                            feature_path=features)
+            features = outputs / f'features_{idx}.h5'
+            matches = outputs / f'matches_{idx}.h5'
+            features_list.append(features)
+            matches_list.append(matches)
 
-        pairs_from_exhaustive.main(sfm_pairs, image_list=references)
-        features, sfm_matches = match_dense.main(matcher_conf,
-                                                 sfm_pairs,
-                                                 images,
-                                                 export_dir=outputs,
-                                                 features_ref=features_sp)
+            print(len(references), "mapping images")
 
-        print(sfm_matches)
+            extract_features.main(feature_conf,
+                                  images,
+                                  image_list=references,
+                                  feature_path=features)
+            match_features.main(matcher_conf,
+                                sfm_pairs,
+                                features=features,
+                                matches=matches)
+
+            print(f'ensemble {idx}/{len(feature_confs)} done')
+
+        ## LoFTR
+        pairs = parse_retrieval(sfm_pairs)
+        pairs = [(q, r) for q, rs in pairs.items() for r in rs]
+
+        match_loftr(images,
+                    pairs,
+                    feature_dir=outputs,
+                    device=device,
+                    resize_max=600)
+
+        features_list.append(outputs / f'features_loftr.h5')
+        matches_list.append(outputs / f'matches_loftr.h5')
+
+        print('Merging features and matches...')
+        merge_keypoints(features_list)
+        merge_matches(matches_list, features_list, sfm_pairs)
+
+        merged_features = outputs / 'merged_features.h5'
+        merged_matches = outputs / 'merged_matches.h5'
+
         options = {'min_model_size': 3}
         model = reconstruction.main(sfm_dir,
                                     images,
                                     sfm_pairs,
-                                    features_sp,
-                                    sfm_matches,
+                                    merged_features,
+                                    merged_matches,
                                     image_list=references,
                                     mapper_options=options)
         if model:
