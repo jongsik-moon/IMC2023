@@ -1,18 +1,19 @@
 import os
 import h5py
-from hloc.utils.io import get_matches, find_pair
+from hloc.utils.io import find_pair
 from hloc.utils.parsers import names_to_pair
 import numpy as np
+
 
 def get_keypoints(hfile, name):
     dset = hfile[name]['keypoints']
     return dset.__array__()
 
+
 def get_matches(hfile, name0: str, name1: str) -> tuple[np.ndarray]:
     pair = names_to_pair(name0, name1)
     matches = hfile[pair]['matches0'].__array__()
-    scores = hfile[pair]['matching_scores0'].__array__()
-    return matches, scores
+    return matches
 
 
 def merge_keypoints(files: list[str]):
@@ -36,22 +37,24 @@ def merge_keypoints(files: list[str]):
             for features_filepath in files:
                 with h5py.File(features_filepath, 'r') as f_f:
                     # Collect keypoints, descriptors, scores data and image_size
-                    keypoints_list.append(f_f[image]['keypoints'].__array__())
-                    scores_list.append(f_f[image]['scores'].__array__())
-                    image_size_list.append(f_f[image]['image_size'].__array__())
+                    try:
+                        keypoints_list.append(
+                            f_f[image]['keypoints'].__array__())
+                    except:
+                        print(
+                            f"no keypoint for the given image: {image}, {features_filepath}"
+                        )
 
             # Concatenate keypoints, descriptors, and scores
             keypoints = np.concatenate(keypoints_list, axis=0)
-            scores = np.concatenate(scores_list, axis=0)
 
             # Here we assume 'image_size' is a single array for each image, so we just take the last one.
-            image_size = image_size_list[-1]
 
             grp.create_dataset('keypoints', data=keypoints)
-            grp.create_dataset('scores', data=scores)
-            grp.create_dataset('image_size', data=image_size)
 
-def merge_matches(matches_files: list[str], features_files: list[str], pairs_path):
+
+def merge_matches(matches_files: list[str], features_files: list[str],
+                  pairs_path):
     # Open a new file for writing
     base = os.path.dirname(matches_files[0])
     with h5py.File(f'{base}/merged_matches.h5', 'w') as f_out:
@@ -67,23 +70,26 @@ def merge_matches(matches_files: list[str], features_files: list[str], pairs_pat
             scores_list = []
             offset = 0  # initialize offset
 
-            for matches_filepath, features_filepath in zip(matches_files, features_files):
-                with h5py.File(matches_filepath, 'r') as m_f, h5py.File(features_filepath, 'r') as f_f:
-                    matches, scores = get_matches(m_f, pair[0], pair[1])
+            for matches_filepath, features_filepath in zip(
+                    matches_files, features_files):
+                with h5py.File(matches_filepath,
+                               'r') as m_f, h5py.File(features_filepath,
+                                                      'r') as f_f:
+                    try:
+                        matches = get_matches(m_f, pair[0], pair[1])
 
-                    # For valid matches, we add the offset to update the indices.
-                    matches[matches != -1] += offset
+                        # For valid matches, we add the offset to update the indices.
+                        matches[matches != -1] += offset
 
-                    matches_list.append(matches)
-                    scores_list.append(scores)
+                        matches_list.append(matches)
+                    except:
+                        print("no matching for the given pair. continue.")
 
                     # Update offset for next file
                     offset += f_f[pair[1]]['keypoints'].shape[0]
+            if matches_list:
+                # concatenate all matches and scores from all files for this pair
+                matches = np.concatenate(matches_list, axis=0)
 
-            # concatenate all matches and scores from all files for this pair
-            matches = np.concatenate(matches_list, axis=0)
-            scores = np.concatenate(scores_list, axis=0)
-
-            # Create the 'matches0' and 'matching_scores0' datasets in this group
-            grp.create_dataset('matches0', data=matches)
-            grp.create_dataset('matching_scores0', data=scores)
+                # Create the 'matches0' and 'matching_scores0' datasets in this group
+                grp.create_dataset('matches0', data=matches)
