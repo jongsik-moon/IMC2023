@@ -60,7 +60,6 @@ adalam_conf = {
     }
 }
 
-
 feature_confs = []
 ensemble_sizes = [1600]
 for ensemble_size in ensemble_sizes:
@@ -82,7 +81,6 @@ print(data_dict.keys())
 for dataset, _ in data_dict.items():
     for scene in data_dict[dataset]:
         img_dir = f'{src}/{dataset}/{scene}/images'
-        if scene != 'chairs': continue
         if not os.path.exists(img_dir):
             continue
         out_results[dataset][scene] = {}
@@ -137,7 +135,6 @@ for dataset, _ in data_dict.items():
                                 sfm_pairs,
                                 features=features,
                                 matches=matches)
-                                
 
         print('Merging features and matches...')
         merge_keypoints(features_list)
