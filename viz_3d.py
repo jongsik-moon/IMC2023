@@ -2,7 +2,7 @@
 import pycolmap
 from hloc.utils import viz_3d
 
-src = '/home/jsmoon/kaggle/sift/heritage_cyprus'
+src = '/home/jsmoon/kaggle/sift/heritage_wall'
 rec_gt = pycolmap.Reconstruction(f'{src}/sfm')
 
 fig = viz_3d.init_figure()

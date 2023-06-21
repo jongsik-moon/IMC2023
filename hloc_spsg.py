@@ -5,7 +5,7 @@ import os.path as op
 import copy
 
 from pathlib import Path
-from hloc import extract_features, match_features, reconstruction, visualization, pairs_from_exhaustive
+from hloc import extract_features, match_features, reconstruction, visualization, pairs_from_exhaustive, pairs_from_retrieval
 from hloc.visualization import plot_images, read_image
 from hloc.utils import viz_3d
 from hloc.utils.io import get_keypoints, get_matches
@@ -25,7 +25,7 @@ feature_conf = {
     'model': {
         'name': 'superpoint',
         'nms_radius': 3,
-        'max_keypoints': -1,
+        'max_keypoints': 4096,
     },
     'preprocessing': {
         'grayscale': True,
@@ -42,10 +42,24 @@ matcher_conf = {
     },
 }
 
+retrieval_conf = {
+    'output': 'global-feats-netvlad',
+    'model': {
+        'name':
+        'netvlad',
+        'weights':
+        '/home/jsmoon/.cache/torch/hub/netvlad/VGG16-NetVLAD-Pitts30K.mat'
+    },
+    'preprocessing': {
+        'resize_max': 1024
+    },
+}
+
 sift_conf = {
     'output': 'feats-sift',
     'model': {
-        'name': 'dog'
+        'name': 'dog',
+        'max_keypoints': 8000,
     },
     'preprocessing': {
         'grayscale': True,
@@ -61,17 +75,19 @@ adalam_conf = {
 }
 
 feature_confs = []
-ensemble_sizes = [1600]
+ensemble_sizes = [1200, 1400, 1600]
 for ensemble_size in ensemble_sizes:
     feature_conf = copy.deepcopy(feature_conf)
     feature_conf['preprocessing']['resize_max'] = ensemble_size
     feature_confs.append(feature_conf)
 
 sift_confs = []
-ensemble_sizes = [2800]
-for ensemble_size in ensemble_sizes:
+ensemble_sizes = [2800, 3200]
+kpts_sizes = [8000, 8000]
+for ensemble_size, kpts_size in zip(ensemble_sizes, kpts_sizes):
     sift_conf = copy.deepcopy(sift_conf)
     sift_conf['preprocessing']['resize_max'] = ensemble_size
+    sift_conf['model']['max_keypoints'] = kpts_size
     sift_confs.append(sift_conf)
 
 data_dict = read_csv_data_path(csv_path)

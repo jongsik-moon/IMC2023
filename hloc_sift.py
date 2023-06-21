@@ -9,22 +9,24 @@ from hloc import extract_features, match_features, reconstruction, visualization
 from hloc.visualization import plot_images, read_image
 from hloc.utils import viz_3d
 from hloc.utils.io import get_keypoints, get_matches
+from hloc.utils.parsers import parse_retrieval
 from kaglib.utils import create_submission
 from collections import defaultdict
 from kaglib.utils import read_csv_data_path, create_submission
 import pycolmap
 from ensemble import merge_keypoints, merge_matches
 import gc
+from kaglib.matchers.LoFTR import match_loftr
 
 src = '/home/jsmoon/kaggle/input/image-matching-challenge-2023/train'
-device = torch.device('cuda:7')
 cwd = op.dirname(__file__)
 csv_path = '/home/jsmoon/kaggle/input/image-matching-challenge-2023/train/train_labels.csv'
 
 feature_conf = {
     'output': 'feats-sift',
     'model': {
-        'name': 'dog'
+        'name': 'dog',
+        'max_keypoints': 10000,
     },
     'preprocessing': {
         'grayscale': True,
@@ -61,7 +63,7 @@ for dataset, _ in data_dict.items():
         features_list = []
         matches_list = []
 
-        outputs = Path(f'{cwd}/sift/{dataset}_{scene}')
+        outputs = Path(f'{cwd}/mix/{dataset}_{scene}')
         if not os.path.isdir(outputs):
             os.makedirs(outputs, exist_ok=True)
 
@@ -91,6 +93,19 @@ for dataset, _ in data_dict.items():
             torch.cuda.empty_cache()
 
             print(f'ensemble {idx}/{len(feature_confs)} done')
+
+        ## LoFTR
+        pairs = parse_retrieval(sfm_pairs)
+        pairs = [(q, r) for q, rs in pairs.items() for r in rs]
+
+        match_loftr(images,
+                    pairs,
+                    feature_dir=outputs,
+                    device='cuda',
+                    resize_max=1024)
+
+        features_list.append(outputs / f'features_loftr.h5')
+        matches_list.append(outputs / f'matches_loftr.h5')
 
         print('Merging features and matches...')
         merge_keypoints(features_list)

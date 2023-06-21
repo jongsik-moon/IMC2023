@@ -157,7 +157,7 @@ def match_loftr(images,
                 device=torch.device('cpu'),
                 min_matches=100,
                 resize_max=1024,
-                max_keypoints=500):
+                max_keypoints=8192):
     matcher = KF.LoFTR(pretrained=None)
     matcher.load_state_dict(
         torch.load(
